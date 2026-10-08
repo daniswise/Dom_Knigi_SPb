@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- ЗАЩИТА -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; media-src 'self';">
+    
+    <title>Духи книг</title>
+    <style>
+        /* --- ФОНОВЫЙ РЕЖИМ --- */
+        body {
+            margin: 0; padding: 0;
+            min-height: 100vh; width: 100vw;
+            display: flex; justify-content: center; align-items: center;
+            
+            background-image: url('domknigi.jpg');
+            background-size: cover; 
+            background-position: center;
+            background-repeat: no-repeat;
+            
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .bg-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.7); 
+            z-index: 1;
+        }
+
+        /* --- ЦЕНТРАЛЬНАЯ КАРТОЧКА С ЧЕРНИЛЬНОЙ РАМКОЙ --- */
+        .card {
+            position: relative;
+            z-index: 10;
+            background: #ffffff;
+            width: 90%; max-width: 360px;
+            
+            border: 5px solid #000000; 
+            border-radius: 4px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
+            
+            text-align: center;
+            animation: floatIn 0.8s ease-out forwards;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 20px;
+            overflow: hidden; 
+        }
+
+        @keyframes floatIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* --- КОНТЕЙНЕР ДЛЯ ФОТО/ВИДЕО --- */
+        .media-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3; 
+            overflow: hidden;
+            border-bottom: 3px solid #000; 
+        }
+
+        img.cover {
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover;
+            display: block;
+            transition: opacity 0.5s ease;
+        }
+
+        video.bg-video {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            opacity: 0; 
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .is-playing img.cover {
+            opacity: 0; 
+        }
+        .is-playing video.bg-video {
+            opacity: 1; 
+        }
+
+        /* Текстовый блок */
+        .content { 
+            padding: 20px 20px 15px;
+        }
+        
+        h1 { 
+            color: #000000; 
+            font-size: 1.8rem;      
+            margin-bottom: 5px;     
+            line-height: 1.1;       
+            font-weight: 800;       
+            letter-spacing: -0.5px; 
+            font-style: italic; 
+        }
+        
+        p.sub { 
+            color: #333333; 
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        /* --- БЛОК ПЛЕЕРА --- */
+        .player-box {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin: 0 20px; 
+            border: 1px solid #ddd; 
+        }
+
+        audio {
+            width: 100%;
+            height: 40px;
+            outline: none;
+            border-radius: 4px;
+            background: transparent;
+        }
+
+        ::-webkit-media-controls-panel {
+            background-color: transparent !important;
+        }
+        
+        /* --- КНОПКА --- */
+        .main-btn {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            border: 2px solid #000; 
+            width: calc(100% - 40px); 
+            margin: 15px 20px 10px; 
+            padding: 14px;
+            font-size: 1.1rem; 
+            font-weight: bold;
+            color: #fff; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 8px;
+            cursor: pointer; 
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            box-shadow: 3px 3px 0px #000; 
+            outline: none; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .main-btn:active { 
+            transform: translate(2px, 2px); 
+            box-shadow: 1px 1px 0px #000;
+        }
+        
+        .main-btn.playing {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            box-shadow: 3px 3px 0px #000;
+        }
+        
+        .main-btn.playing:active {
+             transform: translate(2px, 2px);
+             box-shadow: 1px 1px 0px #000;
+        }
+
+        .hint { 
+            font-size: 0.7rem; 
+            color: #666; 
+            margin-top: 10px; 
+            text-align: center;
+            padding: 0 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="bg-overlay"></div>
+
+<div class="card" id="cardElement">
+    <!-- Медиа зона -->
+    <div class="media-container">
+        <img src="domknigi.jpg" alt="Обложка Духи Книг" class="cover">
+        <video class="bg-video" muted playsinline loop preload="auto">
+            <source src="video.webm" type="video/webm">
+            <source src="video.mp4" type="video/mp4">
+        </video>
+    </div>
+    
+    <div class="content">
+        <h1>Духи книг</h1>
+        <!-- ИСПРАВЛЕНО: Убрано подчеркивание после A. -->
+        <p class="sub">A.Klimashevsky feat DWisepoems</p>
+    </div>
+
+    <button id="bigBtn" class="main-btn" onclick="toggle()">▶ ПОСЛУШАТЬ ТРЕК</button>
+
+    <div class="player-box">
+        <audio id="music" controls preload="auto">
+            <source src="A_._Klimashevsky_feat_DWisepoems–Spirits_of_the_book.mp3" type="audio/mpeg">
+            Ваш браузер не поддерживает аудио.
+        </audio>
+    </div>
+    
+    <div class="hint">Нажмите кнопку выше или используйте панель ниже</div>
+</div>
+
+<script>
+    const m = document.getElementById('music');
+    const btn = document.getElementById('bigBtn');
+    const card = document.getElementById('cardElement');
+    const bgVideo = document.querySelector('.bg-video');
+    
+    let playing = false;
+    let hasVideo = false;
+
+    bgVideo.addEventListener('canplaythrough', () => {
+        hasVideo = true;
+    });
+    
+    bgVideo.addEventListener('error', () => {
+        hasVideo = false;
+    });
+
+    function toggle() {
+        if (!playing) {
+            m.play().then(() => {
+                playing = true;
+                updateUI(true);
+                if (hasVideo) {
+                    bgVideo.play().catch(e => console.error("Ошибка запуска видео:", e));
+                }
+            }).catch(e => alert("Ошибка воспроизведения"));
+        } else {
+            m.pause();
+            playing = false;
+            updateUI(false);
+            if (hasVideo) {
+                bgVideo.pause();
+            }
+        }
+    }
+
+    m.addEventListener('play', () => {
+        playing = true;
+        updateUI(true);
+        if (hasVideo) bgVideo.play();
+    });
+
+    m.addEventListener('pause', () => {
+        playing = false;
+        updateUI(false);
+        if (hasVideo) bgVideo.pause();
+    });
+
+    m.addEventListener('ended', () => {
+        playing = false;
+        btn.innerText = '↻ СЫГРАТЬ СНОВА';
+        btn.classList.remove('playing');
+        if (hasVideo) {
+            bgVideo.pause();
+            bgVideo.currentTime = 0; 
+        }
+    });
+
+    function updateUI(isPlaying) {
+        if (isPlaying) {
+            btn.classList.add('playing');
+            btn.innerText = '⏸ ПАУЗА';
+            if (hasVideo) card.classList.add('is-playing');
+        } else {
+            btn.classList.remove('playing');
+             if(m.currentTime === 0 || m.paused && m.duration > 0 && m.currentTime < m.duration) {
+                 btn.innerText = '▶ ПРОДОЛЖИТЬ';
+             }
+             if (hasVideo) card.classList.remove('is-playing');
+        }
+    }
+</script>
+
+</body>
+</html>
